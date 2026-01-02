@@ -3,7 +3,7 @@
  * @description React Query hooks for entity invitation management
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InviteMemberRequest } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
 import { entityKeys } from './useEntities';

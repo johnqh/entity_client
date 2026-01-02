@@ -3,7 +3,7 @@
  * @description React Query hooks for entity member management
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EntityRole } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
 import { entityKeys } from './useEntities';
@@ -12,8 +12,10 @@ import { entityKeys } from './useEntities';
  * Query keys for member-related queries.
  */
 export const memberKeys = {
-  all: (entitySlug: string) => [...entityKeys.detail(entitySlug), 'members'] as const,
-  list: (entitySlug: string) => [...memberKeys.all(entitySlug), 'list'] as const,
+  all: (entitySlug: string) =>
+    [...entityKeys.detail(entitySlug), 'members'] as const,
+  list: (entitySlug: string) =>
+    [...memberKeys.all(entitySlug), 'list'] as const,
 };
 
 /**
@@ -53,7 +55,11 @@ export function useUpdateMemberRole(client: EntityClient) {
       memberId: string;
       role: EntityRole;
     }) => {
-      const response = await client.updateMemberRole(entitySlug, memberId, role);
+      const response = await client.updateMemberRole(
+        entitySlug,
+        memberId,
+        role
+      );
       if (!response.success) {
         throw new Error(response.error || 'Failed to update member role');
       }

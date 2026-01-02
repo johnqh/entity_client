@@ -4,14 +4,14 @@
  */
 
 import type {
-  Entity,
-  EntityWithRole,
-  EntityMember,
-  EntityInvitation,
   CreateEntityRequest,
-  UpdateEntityRequest,
-  InviteMemberRequest,
+  Entity,
+  EntityInvitation,
+  EntityMember,
   EntityRole,
+  EntityWithRole,
+  InviteMemberRequest,
+  UpdateEntityRequest,
 } from '@sudobility/types';
 
 /**
@@ -97,9 +97,7 @@ export class EntityClient {
   /**
    * Get entity by slug.
    */
-  async getEntity(
-    entitySlug: string
-  ): Promise<ApiResponse<EntityWithRole>> {
+  async getEntity(entitySlug: string): Promise<ApiResponse<EntityWithRole>> {
     return this.request<EntityWithRole>(`/entities/${entitySlug}`);
   }
 
@@ -132,9 +130,7 @@ export class EntityClient {
   /**
    * List members of an entity.
    */
-  async listMembers(
-    entitySlug: string
-  ): Promise<ApiResponse<EntityMember[]>> {
+  async listMembers(entitySlug: string): Promise<ApiResponse<EntityMember[]>> {
     return this.request<EntityMember[]>(`/entities/${entitySlug}/members`);
   }
 
@@ -162,12 +158,9 @@ export class EntityClient {
     entitySlug: string,
     memberId: string
   ): Promise<ApiResponse<void>> {
-    return this.request<void>(
-      `/entities/${entitySlug}/members/${memberId}`,
-      {
-        method: 'DELETE',
-      }
-    );
+    return this.request<void>(`/entities/${entitySlug}/members/${memberId}`, {
+      method: 'DELETE',
+    });
   }
 
   // =============================================================================

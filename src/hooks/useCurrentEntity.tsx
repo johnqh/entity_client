@@ -5,11 +5,11 @@
 
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
-  useCallback,
   type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from 'react';
 import type { EntityWithRole } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
@@ -33,7 +33,9 @@ export interface CurrentEntityContextValue {
   refresh: () => void;
 }
 
-const CurrentEntityContext = createContext<CurrentEntityContextValue | null>(null);
+const CurrentEntityContext = createContext<CurrentEntityContextValue | null>(
+  null
+);
 
 /**
  * Storage key for persisting selected entity.
@@ -68,11 +70,16 @@ export function CurrentEntityProvider({
     return defaultEntitySlug || null;
   });
 
-  const { data: entities = [], isLoading, error, refetch } = useEntities(client);
+  const {
+    data: entities = [],
+    isLoading,
+    error,
+    refetch,
+  } = useEntities(client);
 
   // Determine current entity
-  const currentEntity = entities.find((e) => e.entitySlug === selectedSlug) ||
-    entities[0] || null;
+  const currentEntity =
+    entities.find(e => e.entitySlug === selectedSlug) || entities[0] || null;
 
   // Persist selection
   useEffect(() => {
@@ -118,7 +125,9 @@ export function CurrentEntityProvider({
 export function useCurrentEntity(): CurrentEntityContextValue {
   const context = useContext(CurrentEntityContext);
   if (!context) {
-    throw new Error('useCurrentEntity must be used within CurrentEntityProvider');
+    throw new Error(
+      'useCurrentEntity must be used within CurrentEntityProvider'
+    );
   }
   return context;
 }

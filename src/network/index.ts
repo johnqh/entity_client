@@ -2,4 +2,8 @@
  * @fileoverview Network Exports
  */
 
-export { EntityClient, type EntityClientConfig, type ApiResponse } from './EntityClient';
+export {
+  EntityClient,
+  type EntityClientConfig,
+  type ApiResponse,
+} from './EntityClient';
