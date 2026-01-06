@@ -29,10 +29,10 @@ export function useEntities(client: EntityClient) {
     queryKey: entityKeys.list(),
     queryFn: async () => {
       const response = await client.listEntities();
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch entities');
       }
-      return response.data!;
+      return response.data;
     },
   });
 }
@@ -46,10 +46,10 @@ export function useEntity(client: EntityClient, entitySlug: string | null) {
     queryFn: async () => {
       if (!entitySlug) return null;
       const response = await client.getEntity(entitySlug);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch entity');
       }
-      return response.data!;
+      return response.data;
     },
     enabled: !!entitySlug,
   });
@@ -64,10 +64,10 @@ export function useCreateEntity(client: EntityClient) {
   return useMutation({
     mutationFn: async (request: CreateEntityRequest) => {
       const response = await client.createEntity(request);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to create entity');
       }
-      return response.data!;
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: entityKeys.lists() });
@@ -90,10 +90,10 @@ export function useUpdateEntity(client: EntityClient) {
       request: UpdateEntityRequest;
     }) => {
       const response = await client.updateEntity(entitySlug, request);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to update entity');
       }
-      return response.data!;
+      return response.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

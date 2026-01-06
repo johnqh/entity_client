@@ -30,10 +30,10 @@ export function useEntityMembers(
     queryFn: async () => {
       if (!entitySlug) return [];
       const response = await client.listMembers(entitySlug);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch members');
       }
-      return response.data!;
+      return response.data;
     },
     enabled: !!entitySlug,
   });
@@ -60,10 +60,10 @@ export function useUpdateMemberRole(client: EntityClient) {
         memberId,
         role
       );
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to update member role');
       }
-      return response.data!;
+      return response.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({

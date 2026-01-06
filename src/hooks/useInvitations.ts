@@ -26,10 +26,10 @@ export function useMyInvitations(client: EntityClient) {
     queryKey: invitationKeys.myList(),
     queryFn: async () => {
       const response = await client.listMyInvitations();
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch invitations');
       }
-      return response.data!;
+      return response.data;
     },
   });
 }
@@ -46,10 +46,10 @@ export function useEntityInvitations(
     queryFn: async () => {
       if (!entitySlug) return [];
       const response = await client.listEntityInvitations(entitySlug);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to fetch invitations');
       }
-      return response.data!;
+      return response.data;
     },
     enabled: !!entitySlug,
   });
@@ -70,10 +70,10 @@ export function useCreateInvitation(client: EntityClient) {
       request: InviteMemberRequest;
     }) => {
       const response = await client.createInvitation(entitySlug, request);
-      if (!response.success) {
+      if (!response.success || !response.data) {
         throw new Error(response.error || 'Failed to create invitation');
       }
-      return response.data!;
+      return response.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
