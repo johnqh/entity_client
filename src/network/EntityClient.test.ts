@@ -2,7 +2,7 @@
  * @fileoverview Tests for EntityClient
  */
 
-import { describe, test, expect, beforeEach, mock, spyOn } from 'bun:test';
+import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { EntityClient, type EntityClientConfig } from './EntityClient';
 
 // Mock response factory
@@ -22,7 +22,7 @@ function createErrorResponse(error: string) {
 
 describe('EntityClient', () => {
   let client: EntityClient;
-  let mockFetch: ReturnType<typeof spyOn>;
+  let mockFetch: ReturnType<typeof vi.spyOn>;
   const baseUrl = 'https://api.example.com/api/v1';
   const mockToken = 'mock-auth-token';
 
@@ -33,7 +33,7 @@ describe('EntityClient', () => {
 
   beforeEach(() => {
     client = new EntityClient(config);
-    mockFetch = spyOn(globalThis, 'fetch');
+    mockFetch = vi.spyOn(globalThis, 'fetch');
   });
 
   // =============================================================================
