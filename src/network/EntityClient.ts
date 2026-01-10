@@ -37,7 +37,11 @@ export interface ApiResponse<T> {
  * HTTP client for entity management APIs.
  */
 export class EntityClient {
-  constructor(private readonly config: EntityClientConfig) {}
+  protected readonly config: EntityClientConfig;
+
+  constructor(config: EntityClientConfig) {
+    this.config = config;
+  }
 
   /**
    * Make an authenticated API request.
