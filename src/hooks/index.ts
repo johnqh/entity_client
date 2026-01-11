@@ -30,7 +30,9 @@ export {
 
 export {
   useCurrentEntity,
+  useCurrentEntityOptional,
   CurrentEntityProvider,
   type CurrentEntityContextValue,
   type CurrentEntityProviderProps,
+  type AuthUser,
 } from './useCurrentEntity';

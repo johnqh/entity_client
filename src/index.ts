@@ -56,9 +56,11 @@ export {
   invitationKeys,
   // Context
   useCurrentEntity,
+  useCurrentEntityOptional,
   CurrentEntityProvider,
   type CurrentEntityContextValue,
   type CurrentEntityProviderProps,
+  type AuthUser,
 } from './hooks';
 
 // Re-export types for convenience
