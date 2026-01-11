@@ -41,8 +41,8 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useState,
   useRef,
+  useState,
 } from 'react';
 import { EntityType, type EntityWithRole } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
