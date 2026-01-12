@@ -111,6 +111,34 @@ export function useCancelInvitation(client: EntityClient) {
 }
 
 /**
+ * Hook to renew an invitation with a new expiration date.
+ */
+export function useRenewInvitation(client: EntityClient) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      entitySlug,
+      invitationId,
+    }: {
+      entitySlug: string;
+      invitationId: string;
+    }) => {
+      const response = await client.renewInvitation(entitySlug, invitationId);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to renew invitation');
+      }
+      return response.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: invitationKeys.entityList(variables.entitySlug),
+      });
+    },
+  });
+}
+
+/**
  * Hook to accept an invitation.
  */
 export function useAcceptInvitation(client: EntityClient) {

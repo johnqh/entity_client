@@ -23,6 +23,7 @@ export {
   useEntityInvitations,
   useCreateInvitation,
   useCancelInvitation,
+  useRenewInvitation,
   useAcceptInvitation,
   useDeclineInvitation,
   invitationKeys,

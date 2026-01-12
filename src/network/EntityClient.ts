@@ -214,6 +214,21 @@ export class EntityClient {
   }
 
   /**
+   * Renew an invitation with a new expiration date.
+   */
+  async renewInvitation(
+    entitySlug: string,
+    invitationId: string
+  ): Promise<ApiResponse<EntityInvitation>> {
+    return this.request<EntityInvitation>(
+      `/entities/${entitySlug}/invitations/${invitationId}`,
+      {
+        method: 'PUT',
+      }
+    );
+  }
+
+  /**
    * List pending invitations for the current user.
    */
   async listMyInvitations(): Promise<ApiResponse<EntityInvitation[]>> {
