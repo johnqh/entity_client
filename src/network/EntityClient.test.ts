@@ -170,7 +170,7 @@ describe('EntityClient', () => {
 
   describe('listMembers', () => {
     test('fetches members list for entity', async () => {
-      const mockMembers = [{ id: 'm1', userId: 'u1', role: 'admin' }];
+      const mockMembers = [{ id: 'm1', userId: 'u1', role: 'manager' }];
       mockFetch.mockResolvedValueOnce(createMockResponse(mockMembers));
 
       const result = await client.listMembers('abc12345');

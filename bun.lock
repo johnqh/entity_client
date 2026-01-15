@@ -5,7 +5,7 @@
       "name": "@sudobility/entity_client",
       "devDependencies": {
         "@eslint/js": "^9.0.0",
-        "@sudobility/types": "^1.9.44",
+        "@sudobility/types": "^1.9.45",
         "@tanstack/react-query": "^5.0.0",
         "@types/bun": "^1.2.8",
         "@types/node": "^24.0.0",
@@ -21,7 +21,7 @@
         "vitest": "^4.0.4",
       },
       "peerDependencies": {
-        "@sudobility/types": "^1.9.44",
+        "@sudobility/types": "^1.9.45",
         "@tanstack/react-query": "^5.0.0",
         "react": "^18.0.0 || ^19.0.0",
       },
@@ -162,7 +162,7 @@
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
-    "@sudobility/types": ["@sudobility/types@1.9.44", "", {}, "sha512-2oRTD6sQ6Ouwyb4DAerU6FNCkGRaXnzPNwTg7puIzA3ZVTTauN6DzMLw0QzzUiwLHWlVpYZfldZK+IRYOz0LDA=="],
+    "@sudobility/types": ["@sudobility/types@1.9.45", "", {}, "sha512-bANwJwRnsrRycBbFvBdN3WatK9SbjN99IC0ms80Qq/+MWToT9ZJ8k7pyRjd8/TUsfpRkM6cZzSfG02YEvTUzUw=="],
 
     "@tanstack/query-core": ["@tanstack/query-core@5.90.16", "", {}, "sha512-MvtWckSVufs/ja463/K4PyJeqT+HMlJWtw6PrCpywznd2NSgO3m4KwO9RqbFqGg6iDE8vVMFWMeQI4Io3eEYww=="],
 
