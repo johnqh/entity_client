@@ -68,7 +68,6 @@ export type {
   Entity,
   EntityWithRole,
   EntityMember,
-  EntityMemberUser,
   EntityInvitation,
   EntityType,
   EntityRole,
