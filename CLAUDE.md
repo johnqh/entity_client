@@ -35,7 +35,7 @@ src/
 | Export | Type | Description |
 |--------|------|-------------|
 | `EntityClient` | class | HTTP client wrapping authenticated `fetch` calls to the entity API |
-| `EntityClientConfig` | interface | Config: `{ baseUrl: string; getAuthToken: () => Promise<string \| null> }` |
+| `EntityClientConfig` | interface | Config: `{ baseUrl: string; networkClient: NetworkClient }` |
 | `ApiResponse<T>` | interface | Standard response: `{ success: boolean; data?: T; error?: string }` |
 
 ### Entity Hooks (useEntities.ts)
@@ -114,7 +114,7 @@ All hooks accept an `EntityClient` instance as the first argument rather than re
 ```typescript
 const client = new EntityClient({
   baseUrl: 'https://api.example.com/api/v1',
-  getAuthToken: async () => firebase.currentUser?.getIdToken() ?? null,
+  networkClient: myNetworkClient,
 });
 
 const { data } = useEntities(client);

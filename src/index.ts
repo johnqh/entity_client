@@ -63,6 +63,9 @@ export {
   type AuthUser,
 } from './hooks';
 
+// Error types
+export { EntityErrorCode, type EntityApiError } from './types';
+
 // Re-export types for convenience
 export type {
   Entity,

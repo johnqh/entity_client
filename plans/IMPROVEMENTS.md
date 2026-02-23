@@ -2,17 +2,17 @@
 
 ## Priority 1 - High Impact
 
-### 1. Update CLAUDE.md Configuration Example
+### 1. Update CLAUDE.md Configuration Example ✅ DONE
 - `EntityClientConfig` now uses `networkClient: NetworkClient` not `getAuthToken`
 - The current CLAUDE.md example is outdated and misleading
 - Update all references to the old auth token pattern
 
-### 2. Add Missing Export: `useRenewInvitation`
+### 2. Add Missing Export: `useRenewInvitation` ✅ DONE (already exported)
 - Exported from `src/hooks/index.ts` but missing from `src/index.ts`
 - Consumers can't access the hook from the top-level import
 - Add re-export to main barrel file
 
-### 3. Add Error Handling Types
+### 3. Add Error Handling Types ✅ DONE
 - `ApiResponse` uses generic `error?: string`
 - Add typed error codes for common failures (not found, unauthorized, conflict)
 - Help consumers handle errors programmatically
