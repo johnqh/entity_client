@@ -11,6 +11,7 @@ import type {
   EntityRole,
   EntityWithRole,
   InviteMemberRequest,
+  NetworkClient,
   UpdateEntityRequest,
 } from '@sudobility/types';
 
@@ -20,8 +21,8 @@ import type {
 export interface EntityClientConfig {
   /** Base URL for the API (e.g., 'https://api.example.com/api/v1') */
   baseUrl: string;
-  /** Function to get the current auth token */
-  getAuthToken: () => Promise<string | null>;
+  /** Network client for making HTTP requests */
+  networkClient: NetworkClient;
 }
 
 /**
@@ -37,39 +38,99 @@ export interface ApiResponse<T> {
  * HTTP client for entity management APIs.
  */
 export class EntityClient {
-  protected readonly config: EntityClientConfig;
+  private readonly baseUrl: string;
+  private readonly networkClient: NetworkClient;
 
   constructor(config: EntityClientConfig) {
-    this.config = config;
+    this.baseUrl = config.baseUrl;
+    this.networkClient = config.networkClient;
   }
 
   /**
-   * Make an authenticated API request.
+   * Build full URL from path.
    */
-  private async request<T>(
-    path: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const token = await this.config.getAuthToken();
-    if (!token) {
-      return { success: false, error: 'Not authenticated' };
-    }
+  private buildUrl(path: string): string {
+    const cleanBase = this.baseUrl.replace(/\/$/, '');
+    return `${cleanBase}${path}`;
+  }
 
-    const url = `${this.config.baseUrl}${path}`;
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    };
-
+  /**
+   * Make a GET request.
+   */
+  private async get<T>(path: string): Promise<ApiResponse<T>> {
     try {
-      const response = await fetch(url, {
-        ...options,
-        headers,
-      });
+      const response = await this.networkClient.get<ApiResponse<T>>(
+        this.buildUrl(path)
+      );
+      if (!response.ok || !response.data) {
+        return {
+          success: false,
+          error: response.data?.error || 'Request failed',
+        };
+      }
+      return response.data;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
 
-      const data = await response.json();
-      return data as ApiResponse<T>;
+  /**
+   * Make a POST request.
+   */
+  private async post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.networkClient.post<ApiResponse<T>>(
+        this.buildUrl(path),
+        body
+      );
+      if (!response.ok || !response.data) {
+        return {
+          success: false,
+          error: response.data?.error || 'Request failed',
+        };
+      }
+      return response.data;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Make a PUT request.
+   */
+  private async put<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.networkClient.put<ApiResponse<T>>(
+        this.buildUrl(path),
+        body
+      );
+      if (!response.ok || !response.data) {
+        return {
+          success: false,
+          error: response.data?.error || 'Request failed',
+        };
+      }
+      return response.data;
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
+   * Make a DELETE request.
+   */
+  private async del<T>(path: string): Promise<ApiResponse<T>> {
+    try {
+      const response = await this.networkClient.delete<ApiResponse<T>>(
+        this.buildUrl(path)
+      );
+      if (!response.ok || !response.data) {
+        return {
+          success: false,
+          error: response.data?.error || 'Request failed',
+        };
+      }
+      return response.data;
     } catch (error: any) {
       return { success: false, error: error.message };
     }
@@ -83,7 +144,7 @@ export class EntityClient {
    * List all entities for the current user.
    */
   async listEntities(): Promise<ApiResponse<EntityWithRole[]>> {
-    return this.request<EntityWithRole[]>('/entities');
+    return this.get<EntityWithRole[]>('/entities');
   }
 
   /**
@@ -92,17 +153,14 @@ export class EntityClient {
   async createEntity(
     request: CreateEntityRequest
   ): Promise<ApiResponse<Entity>> {
-    return this.request<Entity>('/entities', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
+    return this.post<Entity>('/entities', request);
   }
 
   /**
    * Get entity by slug.
    */
   async getEntity(entitySlug: string): Promise<ApiResponse<EntityWithRole>> {
-    return this.request<EntityWithRole>(`/entities/${entitySlug}`);
+    return this.get<EntityWithRole>(`/entities/${entitySlug}`);
   }
 
   /**
@@ -112,19 +170,14 @@ export class EntityClient {
     entitySlug: string,
     request: UpdateEntityRequest
   ): Promise<ApiResponse<Entity>> {
-    return this.request<Entity>(`/entities/${entitySlug}`, {
-      method: 'PUT',
-      body: JSON.stringify(request),
-    });
+    return this.put<Entity>(`/entities/${entitySlug}`, request);
   }
 
   /**
    * Delete entity (organizations only).
    */
   async deleteEntity(entitySlug: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/entities/${entitySlug}`, {
-      method: 'DELETE',
-    });
+    return this.del<void>(`/entities/${entitySlug}`);
   }
 
   // =============================================================================
@@ -135,7 +188,7 @@ export class EntityClient {
    * List members of an entity.
    */
   async listMembers(entitySlug: string): Promise<ApiResponse<EntityMember[]>> {
-    return this.request<EntityMember[]>(`/entities/${entitySlug}/members`);
+    return this.get<EntityMember[]>(`/entities/${entitySlug}/members`);
   }
 
   /**
@@ -146,12 +199,9 @@ export class EntityClient {
     memberId: string,
     role: EntityRole
   ): Promise<ApiResponse<EntityMember>> {
-    return this.request<EntityMember>(
+    return this.put<EntityMember>(
       `/entities/${entitySlug}/members/${memberId}`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({ role }),
-      }
+      { role }
     );
   }
 
@@ -162,9 +212,7 @@ export class EntityClient {
     entitySlug: string,
     memberId: string
   ): Promise<ApiResponse<void>> {
-    return this.request<void>(`/entities/${entitySlug}/members/${memberId}`, {
-      method: 'DELETE',
-    });
+    return this.del<void>(`/entities/${entitySlug}/members/${memberId}`);
   }
 
   // =============================================================================
@@ -177,9 +225,7 @@ export class EntityClient {
   async listEntityInvitations(
     entitySlug: string
   ): Promise<ApiResponse<EntityInvitation[]>> {
-    return this.request<EntityInvitation[]>(
-      `/entities/${entitySlug}/invitations`
-    );
+    return this.get<EntityInvitation[]>(`/entities/${entitySlug}/invitations`);
   }
 
   /**
@@ -189,12 +235,9 @@ export class EntityClient {
     entitySlug: string,
     request: InviteMemberRequest
   ): Promise<ApiResponse<EntityInvitation>> {
-    return this.request<EntityInvitation>(
+    return this.post<EntityInvitation>(
       `/entities/${entitySlug}/invitations`,
-      {
-        method: 'POST',
-        body: JSON.stringify(request),
-      }
+      request
     );
   }
 
@@ -205,11 +248,8 @@ export class EntityClient {
     entitySlug: string,
     invitationId: string
   ): Promise<ApiResponse<void>> {
-    return this.request<void>(
-      `/entities/${entitySlug}/invitations/${invitationId}`,
-      {
-        method: 'DELETE',
-      }
+    return this.del<void>(
+      `/entities/${entitySlug}/invitations/${invitationId}`
     );
   }
 
@@ -220,11 +260,8 @@ export class EntityClient {
     entitySlug: string,
     invitationId: string
   ): Promise<ApiResponse<EntityInvitation>> {
-    return this.request<EntityInvitation>(
-      `/entities/${entitySlug}/invitations/${invitationId}`,
-      {
-        method: 'PUT',
-      }
+    return this.put<EntityInvitation>(
+      `/entities/${entitySlug}/invitations/${invitationId}`
     );
   }
 
@@ -232,24 +269,20 @@ export class EntityClient {
    * List pending invitations for the current user.
    */
   async listMyInvitations(): Promise<ApiResponse<EntityInvitation[]>> {
-    return this.request<EntityInvitation[]>('/invitations');
+    return this.get<EntityInvitation[]>('/invitations');
   }
 
   /**
    * Accept an invitation.
    */
   async acceptInvitation(token: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/invitations/${token}/accept`, {
-      method: 'POST',
-    });
+    return this.post<void>(`/invitations/${token}/accept`);
   }
 
   /**
    * Decline an invitation.
    */
   async declineInvitation(token: string): Promise<ApiResponse<void>> {
-    return this.request<void>(`/invitations/${token}/decline`, {
-      method: 'POST',
-    });
+    return this.post<void>(`/invitations/${token}/decline`);
   }
 }

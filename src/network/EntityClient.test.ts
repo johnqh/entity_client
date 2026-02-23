@@ -4,69 +4,76 @@
 
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { EntityClient, type EntityClientConfig } from './EntityClient';
+import type { NetworkClient, NetworkResponse } from '@sudobility/types';
 
-// Mock response factory
-function createMockResponse<T>(data: T, success = true) {
+// Mock NetworkClient factory
+function createMockNetworkClient(): NetworkClient & {
+  get: ReturnType<typeof vi.fn>;
+  post: ReturnType<typeof vi.fn>;
+  put: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  request: ReturnType<typeof vi.fn>;
+} {
   return {
-    json: async () => ({ success, data, error: success ? undefined : 'Error' }),
-    ok: success,
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
+    request: vi.fn(),
   };
 }
 
-function createErrorResponse(error: string) {
+// Mock NetworkResponse factory
+function createMockResponse<T>(
+  data: T,
+  success = true
+): NetworkResponse<{ success: boolean; data?: T; error?: string }> {
   return {
-    json: async () => ({ success: false, error }),
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    success: true,
+    data: { success, data, error: success ? undefined : 'Error' },
+  };
+}
+
+function createErrorResponse(
+  error: string
+): NetworkResponse<{ success: boolean; error: string }> {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    headers: {},
+    success: true,
+    data: { success: false, error },
+  };
+}
+
+function createNetworkErrorResponse(): NetworkResponse<undefined> {
+  return {
     ok: false,
+    status: 500,
+    statusText: 'Internal Server Error',
+    headers: {},
+    success: false,
+    data: undefined,
   };
 }
 
 describe('EntityClient', () => {
   let client: EntityClient;
-  let mockFetch: ReturnType<typeof vi.spyOn>;
+  let mockNetworkClient: ReturnType<typeof createMockNetworkClient>;
   const baseUrl = 'https://api.example.com/api/v1';
-  const mockToken = 'mock-auth-token';
-
-  const config: EntityClientConfig = {
-    baseUrl,
-    getAuthToken: async () => mockToken,
-  };
 
   beforeEach(() => {
+    mockNetworkClient = createMockNetworkClient();
+    const config: EntityClientConfig = {
+      baseUrl,
+      networkClient: mockNetworkClient,
+    };
     client = new EntityClient(config);
-    mockFetch = vi.spyOn(globalThis, 'fetch');
-  });
-
-  // =============================================================================
-  // Authentication
-  // =============================================================================
-
-  describe('authentication', () => {
-    test('returns error when not authenticated', async () => {
-      const unauthClient = new EntityClient({
-        baseUrl,
-        getAuthToken: async () => null,
-      });
-
-      const result = await unauthClient.listEntities();
-
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Not authenticated');
-    });
-
-    test('includes auth token in requests', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse([]));
-
-      await client.listEntities();
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: `Bearer ${mockToken}`,
-          }),
-        })
-      );
-    });
   });
 
   // =============================================================================
@@ -78,23 +85,28 @@ describe('EntityClient', () => {
       const mockEntities = [
         { id: '1', entitySlug: 'abc12345', displayName: 'Test' },
       ];
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockEntities));
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createMockResponse(mockEntities)
+      );
 
       const result = await client.listEntities();
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockEntities);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities`,
-        expect.any(Object)
-      );
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(`${baseUrl}/entities`);
     });
   });
 
   describe('createEntity', () => {
     test('creates entity with request body', async () => {
-      const newEntity = { id: '1', entitySlug: 'neworg12', displayName: 'New Org' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(newEntity));
+      const newEntity = {
+        id: '1',
+        entitySlug: 'neworg12',
+        displayName: 'New Org',
+      };
+      mockNetworkClient.post.mockResolvedValueOnce(
+        createMockResponse(newEntity)
+      );
 
       const result = await client.createEntity({
         displayName: 'New Org',
@@ -103,36 +115,44 @@ describe('EntityClient', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(newEntity);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.post).toHaveBeenCalledWith(
         `${baseUrl}/entities`,
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ displayName: 'New Org', entitySlug: 'neworg12' }),
-        })
+        { displayName: 'New Org', entitySlug: 'neworg12' }
       );
     });
   });
 
   describe('getEntity', () => {
     test('fetches entity by slug', async () => {
-      const mockEntity = { id: '1', entitySlug: 'abc12345', displayName: 'Test' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockEntity));
+      const mockEntity = {
+        id: '1',
+        entitySlug: 'abc12345',
+        displayName: 'Test',
+      };
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createMockResponse(mockEntity)
+      );
 
       const result = await client.getEntity('abc12345');
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockEntity);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345`,
-        expect.any(Object)
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345`
       );
     });
   });
 
   describe('updateEntity', () => {
     test('updates entity with request body', async () => {
-      const updatedEntity = { id: '1', entitySlug: 'abc12345', displayName: 'Updated' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(updatedEntity));
+      const updatedEntity = {
+        id: '1',
+        entitySlug: 'abc12345',
+        displayName: 'Updated',
+      };
+      mockNetworkClient.put.mockResolvedValueOnce(
+        createMockResponse(updatedEntity)
+      );
 
       const result = await client.updateEntity('abc12345', {
         displayName: 'Updated',
@@ -140,26 +160,24 @@ describe('EntityClient', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updatedEntity);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.put).toHaveBeenCalledWith(
         `${baseUrl}/entities/abc12345`,
-        expect.objectContaining({
-          method: 'PUT',
-          body: JSON.stringify({ displayName: 'Updated' }),
-        })
+        { displayName: 'Updated' }
       );
     });
   });
 
   describe('deleteEntity', () => {
     test('deletes entity by slug', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse(undefined));
+      mockNetworkClient.delete.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
 
       const result = await client.deleteEntity('abc12345');
 
       expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345`,
-        expect.objectContaining({ method: 'DELETE' })
+      expect(mockNetworkClient.delete).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345`
       );
     });
   });
@@ -171,15 +189,16 @@ describe('EntityClient', () => {
   describe('listMembers', () => {
     test('fetches members list for entity', async () => {
       const mockMembers = [{ id: 'm1', userId: 'u1', role: 'manager' }];
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockMembers));
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createMockResponse(mockMembers)
+      );
 
       const result = await client.listMembers('abc12345');
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockMembers);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345/members`,
-        expect.any(Object)
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/members`
       );
     });
   });
@@ -187,32 +206,36 @@ describe('EntityClient', () => {
   describe('updateMemberRole', () => {
     test('updates member role', async () => {
       const updatedMember = { id: 'm1', userId: 'u1', role: 'manager' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(updatedMember));
+      mockNetworkClient.put.mockResolvedValueOnce(
+        createMockResponse(updatedMember)
+      );
 
-      const result = await client.updateMemberRole('abc12345', 'm1', 'manager' as any);
+      const result = await client.updateMemberRole(
+        'abc12345',
+        'm1',
+        'manager' as any
+      );
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(updatedMember);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.put).toHaveBeenCalledWith(
         `${baseUrl}/entities/abc12345/members/m1`,
-        expect.objectContaining({
-          method: 'PUT',
-          body: JSON.stringify({ role: 'manager' }),
-        })
+        { role: 'manager' }
       );
     });
   });
 
   describe('removeMember', () => {
     test('removes member from entity', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse(undefined));
+      mockNetworkClient.delete.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
 
       const result = await client.removeMember('abc12345', 'm1');
 
       expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345/members/m1`,
-        expect.objectContaining({ method: 'DELETE' })
+      expect(mockNetworkClient.delete).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/members/m1`
       );
     });
   });
@@ -224,23 +247,30 @@ describe('EntityClient', () => {
   describe('listEntityInvitations', () => {
     test('fetches invitations for entity', async () => {
       const mockInvitations = [{ id: 'i1', email: 'test@example.com' }];
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockInvitations));
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createMockResponse(mockInvitations)
+      );
 
       const result = await client.listEntityInvitations('abc12345');
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockInvitations);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345/invitations`,
-        expect.any(Object)
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/invitations`
       );
     });
   });
 
   describe('createInvitation', () => {
     test('creates invitation with request body', async () => {
-      const newInvitation = { id: 'i1', email: 'new@example.com', role: 'viewer' };
-      mockFetch.mockResolvedValueOnce(createMockResponse(newInvitation));
+      const newInvitation = {
+        id: 'i1',
+        email: 'new@example.com',
+        role: 'viewer',
+      };
+      mockNetworkClient.post.mockResolvedValueOnce(
+        createMockResponse(newInvitation)
+      );
 
       const result = await client.createInvitation('abc12345', {
         email: 'new@example.com',
@@ -249,26 +279,24 @@ describe('EntityClient', () => {
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(newInvitation);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.post).toHaveBeenCalledWith(
         `${baseUrl}/entities/abc12345/invitations`,
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ email: 'new@example.com', role: 'viewer' }),
-        })
+        { email: 'new@example.com', role: 'viewer' }
       );
     });
   });
 
   describe('cancelInvitation', () => {
     test('cancels invitation', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse(undefined));
+      mockNetworkClient.delete.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
 
       const result = await client.cancelInvitation('abc12345', 'i1');
 
       expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/entities/abc12345/invitations/i1`,
-        expect.objectContaining({ method: 'DELETE' })
+      expect(mockNetworkClient.delete).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/invitations/i1`
       );
     });
   });
@@ -276,43 +304,48 @@ describe('EntityClient', () => {
   describe('listMyInvitations', () => {
     test('fetches pending invitations for current user', async () => {
       const mockInvitations = [{ id: 'i1', email: 'me@example.com' }];
-      mockFetch.mockResolvedValueOnce(createMockResponse(mockInvitations));
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createMockResponse(mockInvitations)
+      );
 
       const result = await client.listMyInvitations();
 
       expect(result.success).toBe(true);
       expect(result.data).toEqual(mockInvitations);
-      expect(mockFetch).toHaveBeenCalledWith(
-        `${baseUrl}/invitations`,
-        expect.any(Object)
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(
+        `${baseUrl}/invitations`
       );
     });
   });
 
   describe('acceptInvitation', () => {
     test('accepts invitation by token', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse(undefined));
+      mockNetworkClient.post.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
 
       const result = await client.acceptInvitation('token123');
 
       expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.post).toHaveBeenCalledWith(
         `${baseUrl}/invitations/token123/accept`,
-        expect.objectContaining({ method: 'POST' })
+        undefined
       );
     });
   });
 
   describe('declineInvitation', () => {
     test('declines invitation by token', async () => {
-      mockFetch.mockResolvedValueOnce(createMockResponse(undefined));
+      mockNetworkClient.post.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
 
       const result = await client.declineInvitation('token123');
 
       expect(result.success).toBe(true);
-      expect(mockFetch).toHaveBeenCalledWith(
+      expect(mockNetworkClient.post).toHaveBeenCalledWith(
         `${baseUrl}/invitations/token123/decline`,
-        expect.objectContaining({ method: 'POST' })
+        undefined
       );
     });
   });
@@ -323,7 +356,7 @@ describe('EntityClient', () => {
 
   describe('error handling', () => {
     test('handles network errors', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      mockNetworkClient.get.mockRejectedValueOnce(new Error('Network error'));
 
       const result = await client.listEntities();
 
@@ -331,8 +364,19 @@ describe('EntityClient', () => {
       expect(result.error).toBe('Network error');
     });
 
+    test('handles failed network responses', async () => {
+      mockNetworkClient.get.mockResolvedValueOnce(createNetworkErrorResponse());
+
+      const result = await client.getEntity('notfound');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Request failed');
+    });
+
     test('handles API error responses', async () => {
-      mockFetch.mockResolvedValueOnce(createErrorResponse('Not found'));
+      mockNetworkClient.get.mockResolvedValueOnce(
+        createErrorResponse('Not found')
+      );
 
       const result = await client.getEntity('notfound');
 

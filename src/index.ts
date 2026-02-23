@@ -14,7 +14,7 @@
  * // Create client
  * const client = new EntityClient({
  *   baseUrl: 'https://api.example.com/api/v1',
- *   getAuthToken: async () => firebase.currentUser?.getIdToken() ?? null,
+ *   networkClient: myNetworkClient,
  * });
  *
  * // Use in React component
