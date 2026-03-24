@@ -154,7 +154,7 @@ export function CurrentEntityProvider({
     isLoading: isEntitiesLoading,
     error,
     refetch,
-  } = useEntities(client);
+  } = useEntities(client, { enabled: !!user });
 
   // Track if we're authenticated
   const isAuthenticated = !!user;

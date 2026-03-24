@@ -23,8 +23,15 @@ export const entityKeys = {
 
 /**
  * Hook to list all entities for the current user.
+ *
+ * @param client - Entity API client instance
+ * @param options - Optional query options
+ * @param options.enabled - Whether the query should execute (default: true)
  */
-export function useEntities(client: EntityClient) {
+export function useEntities(
+  client: EntityClient,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
     queryKey: entityKeys.list(),
     queryFn: async () => {
@@ -34,6 +41,7 @@ export function useEntities(client: EntityClient) {
       }
       return response.data;
     },
+    enabled: options?.enabled ?? true,
   });
 }
 
