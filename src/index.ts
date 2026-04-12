@@ -26,11 +26,7 @@
  */
 
 // Network exports
-export {
-  EntityClient,
-  type EntityClientConfig,
-  type ApiResponse,
-} from './network';
+export { EntityClient, type EntityClientConfig } from './network';
 
 // Hook exports
 export {
@@ -51,6 +47,7 @@ export {
   useEntityInvitations,
   useCreateInvitation,
   useCancelInvitation,
+  useRenewInvitation,
   useAcceptInvitation,
   useDeclineInvitation,
   invitationKeys,
@@ -68,6 +65,7 @@ export { EntityErrorCode, type EntityApiError } from './types';
 
 // Re-export types for convenience
 export type {
+  BaseResponse,
   Entity,
   EntityWithRole,
   EntityMember,

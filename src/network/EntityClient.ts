@@ -4,6 +4,7 @@
  */
 
 import type {
+  BaseResponse,
   CreateEntityRequest,
   Entity,
   EntityInvitation,
@@ -23,15 +24,6 @@ export interface EntityClientConfig {
   baseUrl: string;
   /** Network client for making HTTP requests */
   networkClient: NetworkClient;
-}
-
-/**
- * Standard API response wrapper.
- */
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
 }
 
 /**
@@ -57,29 +49,37 @@ export class EntityClient {
   /**
    * Make a GET request.
    */
-  private async get<T>(path: string): Promise<ApiResponse<T>> {
+  private async get<T>(path: string): Promise<BaseResponse<T>> {
     try {
-      const response = await this.networkClient.get<ApiResponse<T>>(
+      const response = await this.networkClient.get<BaseResponse<T>>(
         this.buildUrl(path)
       );
       if (!response.ok || !response.data) {
         return {
           success: false,
           error: response.data?.error || 'Request failed',
+          timestamp: new Date().toISOString(),
         };
       }
       return response.data;
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   /**
    * Make a POST request.
    */
-  private async post<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+  private async post<T>(
+    path: string,
+    body?: unknown
+  ): Promise<BaseResponse<T>> {
     try {
-      const response = await this.networkClient.post<ApiResponse<T>>(
+      const response = await this.networkClient.post<BaseResponse<T>>(
         this.buildUrl(path),
         body
       );
@@ -87,20 +87,25 @@ export class EntityClient {
         return {
           success: false,
           error: response.data?.error || 'Request failed',
+          timestamp: new Date().toISOString(),
         };
       }
       return response.data;
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   /**
    * Make a PUT request.
    */
-  private async put<T>(path: string, body?: unknown): Promise<ApiResponse<T>> {
+  private async put<T>(path: string, body?: unknown): Promise<BaseResponse<T>> {
     try {
-      const response = await this.networkClient.put<ApiResponse<T>>(
+      const response = await this.networkClient.put<BaseResponse<T>>(
         this.buildUrl(path),
         body
       );
@@ -108,31 +113,41 @@ export class EntityClient {
         return {
           success: false,
           error: response.data?.error || 'Request failed',
+          timestamp: new Date().toISOString(),
         };
       }
       return response.data;
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
   /**
    * Make a DELETE request.
    */
-  private async del<T>(path: string): Promise<ApiResponse<T>> {
+  private async del<T>(path: string): Promise<BaseResponse<T>> {
     try {
-      const response = await this.networkClient.delete<ApiResponse<T>>(
+      const response = await this.networkClient.delete<BaseResponse<T>>(
         this.buildUrl(path)
       );
       if (!response.ok || !response.data) {
         return {
           success: false,
           error: response.data?.error || 'Request failed',
+          timestamp: new Date().toISOString(),
         };
       }
       return response.data;
     } catch (error: any) {
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
     }
   }
 
@@ -143,7 +158,7 @@ export class EntityClient {
   /**
    * List all entities for the current user.
    */
-  async listEntities(): Promise<ApiResponse<EntityWithRole[]>> {
+  async listEntities(): Promise<BaseResponse<EntityWithRole[]>> {
     return this.get<EntityWithRole[]>('/entities');
   }
 
@@ -152,14 +167,14 @@ export class EntityClient {
    */
   async createEntity(
     request: CreateEntityRequest
-  ): Promise<ApiResponse<Entity>> {
+  ): Promise<BaseResponse<Entity>> {
     return this.post<Entity>('/entities', request);
   }
 
   /**
    * Get entity by slug.
    */
-  async getEntity(entitySlug: string): Promise<ApiResponse<EntityWithRole>> {
+  async getEntity(entitySlug: string): Promise<BaseResponse<EntityWithRole>> {
     return this.get<EntityWithRole>(`/entities/${entitySlug}`);
   }
 
@@ -169,14 +184,14 @@ export class EntityClient {
   async updateEntity(
     entitySlug: string,
     request: UpdateEntityRequest
-  ): Promise<ApiResponse<Entity>> {
+  ): Promise<BaseResponse<Entity>> {
     return this.put<Entity>(`/entities/${entitySlug}`, request);
   }
 
   /**
    * Delete entity (organizations only).
    */
-  async deleteEntity(entitySlug: string): Promise<ApiResponse<void>> {
+  async deleteEntity(entitySlug: string): Promise<BaseResponse<void>> {
     return this.del<void>(`/entities/${entitySlug}`);
   }
 
@@ -187,7 +202,7 @@ export class EntityClient {
   /**
    * List members of an entity.
    */
-  async listMembers(entitySlug: string): Promise<ApiResponse<EntityMember[]>> {
+  async listMembers(entitySlug: string): Promise<BaseResponse<EntityMember[]>> {
     return this.get<EntityMember[]>(`/entities/${entitySlug}/members`);
   }
 
@@ -198,7 +213,7 @@ export class EntityClient {
     entitySlug: string,
     memberId: string,
     role: EntityRole
-  ): Promise<ApiResponse<EntityMember>> {
+  ): Promise<BaseResponse<EntityMember>> {
     return this.put<EntityMember>(
       `/entities/${entitySlug}/members/${memberId}`,
       { role }
@@ -211,7 +226,7 @@ export class EntityClient {
   async removeMember(
     entitySlug: string,
     memberId: string
-  ): Promise<ApiResponse<void>> {
+  ): Promise<BaseResponse<void>> {
     return this.del<void>(`/entities/${entitySlug}/members/${memberId}`);
   }
 
@@ -224,7 +239,7 @@ export class EntityClient {
    */
   async listEntityInvitations(
     entitySlug: string
-  ): Promise<ApiResponse<EntityInvitation[]>> {
+  ): Promise<BaseResponse<EntityInvitation[]>> {
     return this.get<EntityInvitation[]>(`/entities/${entitySlug}/invitations`);
   }
 
@@ -234,7 +249,7 @@ export class EntityClient {
   async createInvitation(
     entitySlug: string,
     request: InviteMemberRequest
-  ): Promise<ApiResponse<EntityInvitation>> {
+  ): Promise<BaseResponse<EntityInvitation>> {
     return this.post<EntityInvitation>(
       `/entities/${entitySlug}/invitations`,
       request
@@ -247,7 +262,7 @@ export class EntityClient {
   async cancelInvitation(
     entitySlug: string,
     invitationId: string
-  ): Promise<ApiResponse<void>> {
+  ): Promise<BaseResponse<void>> {
     return this.del<void>(
       `/entities/${entitySlug}/invitations/${invitationId}`
     );
@@ -259,7 +274,7 @@ export class EntityClient {
   async renewInvitation(
     entitySlug: string,
     invitationId: string
-  ): Promise<ApiResponse<EntityInvitation>> {
+  ): Promise<BaseResponse<EntityInvitation>> {
     return this.put<EntityInvitation>(
       `/entities/${entitySlug}/invitations/${invitationId}`
     );
@@ -268,21 +283,21 @@ export class EntityClient {
   /**
    * List pending invitations for the current user.
    */
-  async listMyInvitations(): Promise<ApiResponse<EntityInvitation[]>> {
+  async listMyInvitations(): Promise<BaseResponse<EntityInvitation[]>> {
     return this.get<EntityInvitation[]>('/invitations');
   }
 
   /**
    * Accept an invitation.
    */
-  async acceptInvitation(token: string): Promise<ApiResponse<void>> {
+  async acceptInvitation(token: string): Promise<BaseResponse<void>> {
     return this.post<void>(`/invitations/${token}/accept`);
   }
 
   /**
    * Decline an invitation.
    */
-  async declineInvitation(token: string): Promise<ApiResponse<void>> {
+  async declineInvitation(token: string): Promise<BaseResponse<void>> {
     return this.post<void>(`/invitations/${token}/decline`);
   }
 }
