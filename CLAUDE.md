@@ -1,5 +1,10 @@
 # entity_client - AI Development Guide
 
+> **Git policy — never auto-commit or auto-push.** Leave your work in the working tree.
+> Run `git commit`, `git push`, `gh pr create`, or `scripts/push_all.sh` **only when the user
+> explicitly asks in that turn**. Approval for an earlier change does not carry forward, and
+> finishing a task is not permission to commit it.
+
 ## Overview
 
 React client library for entity/organization management that provides an HTTP API client (`EntityClient`) and a full suite of TanStack Query v5 hooks for CRUD operations on entities, members, and invitations. It also includes a React context provider (`CurrentEntityProvider`) for managing workspace/entity selection state with localStorage persistence.
@@ -232,3 +237,7 @@ export function useMyMutation(client: EntityClient) {
 ### CI/CD
 
 Automated via GitHub Actions (`.github/workflows/ci-cd.yml`). Runs on pushes and PRs to `main`/`develop`. Uses a shared workflow from `johnqh/workflows` for unified CI/CD with public NPM publishing.
+
+## Git Workflow
+
+- Do not use feature branches for code changes. Always stay on the current branch.
