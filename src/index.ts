@@ -51,6 +51,12 @@ export {
   useAcceptInvitation,
   useDeclineInvitation,
   invitationKeys,
+  // API key hooks
+  useEntityApiKeys,
+  useCreateApiKey,
+  useUpdateApiKey,
+  useRevokeApiKey,
+  apiKeyKeys,
   // Context
   useCurrentEntity,
   useCurrentEntityOptional,
@@ -62,6 +68,14 @@ export {
 
 // Error types
 export { EntityErrorCode, type EntityApiError } from './types';
+
+// API key wire types (move to @sudobility/types once published there)
+export type {
+  EntityApiKey,
+  CreatedEntityApiKey,
+  CreateApiKeyRequest,
+  UpdateApiKeyRequest,
+} from './types';
 
 // Re-export types for convenience
 export type {

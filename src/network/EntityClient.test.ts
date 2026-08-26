@@ -384,4 +384,100 @@ describe('EntityClient', () => {
       expect(result.error).toBe('Not found');
     });
   });
+
+  // =============================================================================
+  // API Keys
+  // =============================================================================
+
+  describe('listApiKeys', () => {
+    test('fetches keys for an entity', async () => {
+      const mockKeys = [
+        { id: 'key-1', keyName: 'CI', keyPrefix: 'shyft_a1b2c3' },
+      ];
+      mockNetworkClient.get.mockResolvedValueOnce(createMockResponse(mockKeys));
+
+      const result = await client.listApiKeys('abc12345');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(mockKeys);
+      expect(mockNetworkClient.get).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/api-keys`
+      );
+    });
+  });
+
+  describe('createApiKey', () => {
+    test('creates a key and returns the plaintext secret', async () => {
+      const created = { id: 'key-1', keyName: 'CI', key: 'shyft_secret' };
+      mockNetworkClient.post.mockResolvedValueOnce(createMockResponse(created));
+
+      const result = await client.createApiKey('abc12345', {
+        key_name: 'CI',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.data?.key).toBe('shyft_secret');
+      expect(mockNetworkClient.post).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/api-keys`,
+        { key_name: 'CI' }
+      );
+    });
+  });
+
+  describe('updateApiKey', () => {
+    test('renames a key', async () => {
+      mockNetworkClient.put.mockResolvedValueOnce(
+        createMockResponse({ id: 'key-1', keyName: 'Renamed' })
+      );
+
+      const result = await client.updateApiKey('abc12345', 'key-1', {
+        key_name: 'Renamed',
+      });
+
+      expect(result.success).toBe(true);
+      expect(mockNetworkClient.put).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/api-keys/key-1`,
+        { key_name: 'Renamed' }
+      );
+    });
+
+    test('deactivates a key', async () => {
+      mockNetworkClient.put.mockResolvedValueOnce(
+        createMockResponse({ id: 'key-1', isActive: false })
+      );
+
+      await client.updateApiKey('abc12345', 'key-1', { is_active: false });
+
+      expect(mockNetworkClient.put).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/api-keys/key-1`,
+        { is_active: false }
+      );
+    });
+  });
+
+  describe('revokeApiKey', () => {
+    test('deletes a key by id', async () => {
+      mockNetworkClient.delete.mockResolvedValueOnce(
+        createMockResponse(undefined)
+      );
+
+      const result = await client.revokeApiKey('abc12345', 'key-1');
+
+      expect(result.success).toBe(true);
+      expect(mockNetworkClient.delete).toHaveBeenCalledWith(
+        `${baseUrl}/entities/abc12345/api-keys/key-1`
+      );
+    });
+
+    test('surfaces an API error', async () => {
+      mockNetworkClient.delete.mockResolvedValueOnce(
+        createErrorResponse('Insufficient permissions')
+      );
+
+      const result = await client.revokeApiKey('abc12345', 'key-1');
+
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Insufficient permissions');
+    });
+  });
 });

@@ -15,6 +15,12 @@ import type {
   NetworkClient,
   UpdateEntityRequest,
 } from '@sudobility/types';
+import type {
+  CreateApiKeyRequest,
+  CreatedEntityApiKey,
+  EntityApiKey,
+  UpdateApiKeyRequest,
+} from '../types/api-keys';
 
 /**
  * Configuration for the Entity client.
@@ -299,5 +305,54 @@ export class EntityClient {
    */
   async declineInvitation(token: string): Promise<BaseResponse<void>> {
     return this.post<void>(`/invitations/${token}/decline`);
+  }
+
+  // =============================================================================
+  // API Keys
+  // =============================================================================
+
+  /**
+   * List an entity's API keys. Secrets are never returned.
+   */
+  async listApiKeys(entitySlug: string): Promise<BaseResponse<EntityApiKey[]>> {
+    return this.get<EntityApiKey[]>(`/entities/${entitySlug}/api-keys`);
+  }
+
+  /**
+   * Create an API key.
+   * The response carries the plaintext key -- it cannot be retrieved again.
+   */
+  async createApiKey(
+    entitySlug: string,
+    request: CreateApiKeyRequest
+  ): Promise<BaseResponse<CreatedEntityApiKey>> {
+    return this.post<CreatedEntityApiKey>(
+      `/entities/${entitySlug}/api-keys`,
+      request
+    );
+  }
+
+  /**
+   * Rename an API key or toggle whether it is active.
+   */
+  async updateApiKey(
+    entitySlug: string,
+    keyId: string,
+    request: UpdateApiKeyRequest
+  ): Promise<BaseResponse<EntityApiKey>> {
+    return this.put<EntityApiKey>(
+      `/entities/${entitySlug}/api-keys/${keyId}`,
+      request
+    );
+  }
+
+  /**
+   * Permanently revoke an API key.
+   */
+  async revokeApiKey(
+    entitySlug: string,
+    keyId: string
+  ): Promise<BaseResponse<void>> {
+    return this.del<void>(`/entities/${entitySlug}/api-keys/${keyId}`);
   }
 }

@@ -30,6 +30,14 @@ export {
 } from './useInvitations';
 
 export {
+  useEntityApiKeys,
+  useCreateApiKey,
+  useUpdateApiKey,
+  useRevokeApiKey,
+  apiKeyKeys,
+} from './useEntityApiKeys';
+
+export {
   useCurrentEntity,
   useCurrentEntityOptional,
   CurrentEntityProvider,
