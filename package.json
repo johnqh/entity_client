@@ -16,7 +16,7 @@
     "build:watch": "bunx tsc --watch",
     "clean": "rm -rf dist",
     "prepublishOnly": "bun run clean && bun run build",
-    "test": "vitest run",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "typecheck": "bunx tsc --noEmit",
     "lint": "bunx eslint src",
