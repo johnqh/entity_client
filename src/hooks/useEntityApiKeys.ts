@@ -4,12 +4,12 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { EntityClient } from '../network/EntityClient.js';
-import { entityKeys } from './useEntities.js';
+import { EntityClient } from '../network/EntityClient';
+import { entityKeys } from './useEntities';
 import type {
   CreateApiKeyRequest,
   UpdateApiKeyRequest,
-} from '../types/api-keys.js';
+} from '../types/api-keys';
 
 /**
  * Query keys for API key queries.

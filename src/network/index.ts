@@ -2,4 +2,4 @@
  * @fileoverview Network Exports
  */
 
-export { EntityClient, type EntityClientConfig } from './EntityClient.js';
+export { EntityClient, type EntityClientConfig } from './EntityClient';

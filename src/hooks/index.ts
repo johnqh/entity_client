@@ -9,14 +9,14 @@ export {
   useUpdateEntity,
   useDeleteEntity,
   entityKeys,
-} from './useEntities.js';
+} from './useEntities';
 
 export {
   useEntityMembers,
   useUpdateMemberRole,
   useRemoveMember,
   memberKeys,
-} from './useEntityMembers.js';
+} from './useEntityMembers';
 
 export {
   useMyInvitations,
@@ -27,7 +27,7 @@ export {
   useAcceptInvitation,
   useDeclineInvitation,
   invitationKeys,
-} from './useInvitations.js';
+} from './useInvitations';
 
 export {
   useEntityApiKeys,
@@ -35,7 +35,7 @@ export {
   useUpdateApiKey,
   useRevokeApiKey,
   apiKeyKeys,
-} from './useEntityApiKeys.js';
+} from './useEntityApiKeys';
 
 export {
   useCurrentEntity,
@@ -44,4 +44,4 @@ export {
   type CurrentEntityContextValue,
   type CurrentEntityProviderProps,
   type AuthUser,
-} from './useCurrentEntity.js';
+} from './useCurrentEntity';

@@ -5,8 +5,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InviteMemberRequest } from '@sudobility/types';
-import { EntityClient } from '../network/EntityClient.js';
-import { entityKeys } from './useEntities.js';
+import { EntityClient } from '../network/EntityClient';
+import { entityKeys } from './useEntities';
 
 /**
  * Query keys for invitation-related queries.

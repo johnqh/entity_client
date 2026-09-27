@@ -20,7 +20,7 @@ import type {
   CreatedEntityApiKey,
   EntityApiKey,
   UpdateApiKeyRequest,
-} from '../types/api-keys.js';
+} from '../types/api-keys';
 
 /**
  * Configuration for the Entity client.

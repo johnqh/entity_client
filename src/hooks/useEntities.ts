@@ -8,7 +8,7 @@ import type {
   CreateEntityRequest,
   UpdateEntityRequest,
 } from '@sudobility/types';
-import { EntityClient } from '../network/EntityClient.js';
+import { EntityClient } from '../network/EntityClient';
 
 /**
  * Query keys for entity-related queries.
