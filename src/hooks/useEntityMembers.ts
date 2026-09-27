@@ -5,8 +5,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { EntityRole } from '@sudobility/types';
-import { EntityClient } from '../network/EntityClient';
-import { entityKeys } from './useEntities';
+import { EntityClient } from '../network/EntityClient.js';
+import { entityKeys } from './useEntities.js';
 
 /**
  * Query keys for member-related queries.

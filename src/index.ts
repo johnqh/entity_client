@@ -26,7 +26,7 @@
  */
 
 // Network exports
-export { EntityClient, type EntityClientConfig } from './network';
+export { EntityClient, type EntityClientConfig } from './network/index.js';
 
 // Hook exports
 export {
@@ -64,10 +64,10 @@ export {
   type CurrentEntityContextValue,
   type CurrentEntityProviderProps,
   type AuthUser,
-} from './hooks';
+} from './hooks/index.js';
 
 // Error types
-export { EntityErrorCode, type EntityApiError } from './types';
+export { EntityErrorCode, type EntityApiError } from './types/index.js';
 
 // API key wire types (move to @sudobility/types once published there)
 export type {
@@ -75,7 +75,7 @@ export type {
   CreatedEntityApiKey,
   CreateApiKeyRequest,
   UpdateApiKeyRequest,
-} from './types';
+} from './types/index.js';
 
 // Re-export types for convenience
 export type {

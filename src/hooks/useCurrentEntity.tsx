@@ -45,8 +45,8 @@ import {
   useState,
 } from 'react';
 import { EntityType, type EntityWithRole } from '@sudobility/types';
-import { EntityClient } from '../network/EntityClient';
-import { useEntities } from './useEntities';
+import { EntityClient } from '../network/EntityClient.js';
+import { useEntities } from './useEntities.js';
 
 /**
  * Minimal user interface for authentication.
