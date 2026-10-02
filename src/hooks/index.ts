@@ -37,6 +37,8 @@ export {
   apiKeyKeys,
 } from './useEntityApiKeys';
 
+export { EntityUserProvider, useEntityUserId } from './entityUser';
+
 export {
   useCurrentEntity,
   useCurrentEntityOptional,

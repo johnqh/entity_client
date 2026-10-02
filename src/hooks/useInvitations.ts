@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEntityUserId } from './entityUser';
 import type { InviteMemberRequest } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
 import { entityKeys } from './useEntities';
@@ -12,18 +13,20 @@ import { entityKeys } from './useEntities';
  * Query keys for invitation-related queries.
  */
 export const invitationKeys = {
-  all: ['invitations'] as const,
-  myList: () => [...invitationKeys.all, 'my'] as const,
-  entityList: (entitySlug: string) =>
-    [...entityKeys.detail(entitySlug), 'invitations'] as const,
+  all: (userId: string | null) => ['invitations', userId] as const,
+  myList: (userId: string | null) =>
+    [...invitationKeys.all(userId), 'my'] as const,
+  entityList: (userId: string | null, entitySlug: string) =>
+    [...entityKeys.detail(userId, entitySlug), 'invitations'] as const,
 };
 
 /**
  * Hook to list pending invitations for the current user.
  */
 export function useMyInvitations(client: EntityClient) {
+  const userId = useEntityUserId();
   return useQuery({
-    queryKey: invitationKeys.myList(),
+    queryKey: invitationKeys.myList(userId),
     queryFn: async () => {
       const response = await client.listMyInvitations();
       if (!response.success || !response.data) {
@@ -41,8 +44,11 @@ export function useEntityInvitations(
   client: EntityClient,
   entitySlug: string | null
 ) {
+  const userId = useEntityUserId();
   return useQuery({
-    queryKey: entitySlug ? invitationKeys.entityList(entitySlug) : ['disabled'],
+    queryKey: entitySlug
+      ? invitationKeys.entityList(userId, entitySlug)
+      : ['disabled'],
     queryFn: async () => {
       if (!entitySlug) return [];
       const response = await client.listEntityInvitations(entitySlug);
@@ -59,6 +65,7 @@ export function useEntityInvitations(
  * Hook to create an invitation.
  */
 export function useCreateInvitation(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -77,7 +84,7 @@ export function useCreateInvitation(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: invitationKeys.entityList(variables.entitySlug),
+        queryKey: invitationKeys.entityList(userId, variables.entitySlug),
       });
     },
   });
@@ -87,6 +94,7 @@ export function useCreateInvitation(client: EntityClient) {
  * Hook to cancel an invitation.
  */
 export function useCancelInvitation(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -104,7 +112,7 @@ export function useCancelInvitation(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: invitationKeys.entityList(variables.entitySlug),
+        queryKey: invitationKeys.entityList(userId, variables.entitySlug),
       });
     },
   });
@@ -114,6 +122,7 @@ export function useCancelInvitation(client: EntityClient) {
  * Hook to renew an invitation with a new expiration date.
  */
 export function useRenewInvitation(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -132,7 +141,7 @@ export function useRenewInvitation(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: invitationKeys.entityList(variables.entitySlug),
+        queryKey: invitationKeys.entityList(userId, variables.entitySlug),
       });
     },
   });
@@ -142,6 +151,7 @@ export function useRenewInvitation(client: EntityClient) {
  * Hook to accept an invitation.
  */
 export function useAcceptInvitation(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -153,8 +163,10 @@ export function useAcceptInvitation(client: EntityClient) {
     },
     onSuccess: () => {
       // Invalidate both my invitations and entity list
-      queryClient.invalidateQueries({ queryKey: invitationKeys.myList() });
-      queryClient.invalidateQueries({ queryKey: entityKeys.lists() });
+      queryClient.invalidateQueries({
+        queryKey: invitationKeys.myList(userId),
+      });
+      queryClient.invalidateQueries({ queryKey: entityKeys.lists(userId) });
     },
   });
 }
@@ -163,6 +175,7 @@ export function useAcceptInvitation(client: EntityClient) {
  * Hook to decline an invitation.
  */
 export function useDeclineInvitation(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -173,7 +186,9 @@ export function useDeclineInvitation(client: EntityClient) {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invitationKeys.myList() });
+      queryClient.invalidateQueries({
+        queryKey: invitationKeys.myList(userId),
+      });
     },
   });
 }

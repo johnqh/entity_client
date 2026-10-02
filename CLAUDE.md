@@ -125,18 +125,34 @@ const client = new EntityClient({
 const { data } = useEntities(client);
 ```
 
-### Query Key Factory Pattern
+### Query Key Factory Pattern — every key starts with the user
 
-Each domain uses a query key factory object for consistent, hierarchical cache management:
+Each domain uses a query key factory, and **every key begins with the signed-in
+user id**:
 
 ```typescript
-entityKeys.all            // ['entities']
-entityKeys.list()         // ['entities', 'list']
-entityKeys.detail(slug)   // ['entities', 'detail', slug]
-memberKeys.list(slug)     // ['entities', 'detail', slug, 'members', 'list']
-invitationKeys.myList()   // ['invitations', 'my']
-invitationKeys.entityList(slug) // ['entities', 'detail', slug, 'invitations']
+entityKeys.all(uid)                   // ['entities', uid]
+entityKeys.list(uid)                  // ['entities', uid, 'list']
+entityKeys.detail(uid, slug)          // ['entities', uid, 'detail', slug]
+memberKeys.list(uid, slug)            // ['entities', uid, 'detail', slug, 'members', 'list']
+invitationKeys.myList(uid)            // ['invitations', uid, 'my']
+invitationKeys.entityList(uid, slug)  // ['entities', uid, 'detail', slug, 'invitations']
 ```
+
+The cache used to be keyed only by what was fetched. A tab that signed out and
+registered a new account kept the old account's workspace list, the app sent
+the old workspace's id as `X-Entity-Id` on every request, and the server refused
+all of them, including the one that would have corrected it. That happened
+twice. Clearing the cache when the user changes races the first render after
+the change; a key that names the user makes the wrong answer unreachable.
+
+Hooks read the user from `EntityUserProvider` (`useEntityUserId`).
+`CurrentEntityProvider` renders one, so apps using it need nothing else; an app
+that calls the hooks without it must wrap them in `EntityUserProvider`, or its
+queries share a `null` user's entry. `useEntities` also takes an explicit
+`userId` option, which the provider uses because it sits above its own
+`EntityUserProvider`. `useCurrentEntity.test.tsx` holds the property: switching
+accounts in one tab never offers the previous account's workspace.
 
 ### Automatic Cache Invalidation
 
@@ -150,11 +166,11 @@ Mutations automatically invalidate related queries via `onSuccess` callbacks:
 
 The `CurrentEntityProvider` manages workspace selection with this priority chain:
 1. Explicitly selected slug (via `selectEntity()`)
-2. Persisted slug from `localStorage` (key: `currentEntitySlug`)
+2. Persisted slug from `localStorage`, per user (key: `currentEntitySlug:<uid>`; storage that is missing or throws, as on React Native, is skipped)
 3. Personal entity (entity with `entityType === EntityType.PERSONAL`)
 4. First entity in the list
 
-It automatically clears state on logout (user becomes null) and refetches on user change.
+When the user changes it drops the previous user's cached entities and invitations and restores the new user's own remembered selection.
 
 ### Conditional Query Disabling
 

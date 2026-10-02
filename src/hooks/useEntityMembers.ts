@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEntityUserId } from './entityUser';
 import type { EntityRole } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
 import { entityKeys } from './useEntities';
@@ -12,10 +13,10 @@ import { entityKeys } from './useEntities';
  * Query keys for member-related queries.
  */
 export const memberKeys = {
-  all: (entitySlug: string) =>
-    [...entityKeys.detail(entitySlug), 'members'] as const,
-  list: (entitySlug: string) =>
-    [...memberKeys.all(entitySlug), 'list'] as const,
+  all: (userId: string | null, entitySlug: string) =>
+    [...entityKeys.detail(userId, entitySlug), 'members'] as const,
+  list: (userId: string | null, entitySlug: string) =>
+    [...memberKeys.all(userId, entitySlug), 'list'] as const,
 };
 
 /**
@@ -25,8 +26,9 @@ export function useEntityMembers(
   client: EntityClient,
   entitySlug: string | null
 ) {
+  const userId = useEntityUserId();
   return useQuery({
-    queryKey: entitySlug ? memberKeys.list(entitySlug) : ['disabled'],
+    queryKey: entitySlug ? memberKeys.list(userId, entitySlug) : ['disabled'],
     queryFn: async () => {
       if (!entitySlug) return [];
       const response = await client.listMembers(entitySlug);
@@ -43,6 +45,7 @@ export function useEntityMembers(
  * Hook to update a member's role.
  */
 export function useUpdateMemberRole(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -67,7 +70,7 @@ export function useUpdateMemberRole(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: memberKeys.list(variables.entitySlug),
+        queryKey: memberKeys.list(userId, variables.entitySlug),
       });
     },
   });
@@ -77,6 +80,7 @@ export function useUpdateMemberRole(client: EntityClient) {
  * Hook to remove a member from an entity.
  */
 export function useRemoveMember(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -94,7 +98,7 @@ export function useRemoveMember(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: memberKeys.list(variables.entitySlug),
+        queryKey: memberKeys.list(userId, variables.entitySlug),
       });
     },
   });

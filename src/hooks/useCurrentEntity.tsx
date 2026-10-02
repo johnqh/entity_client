@@ -46,7 +46,10 @@ import {
 } from 'react';
 import { EntityType, type EntityWithRole } from '@sudobility/types';
 import { EntityClient } from '../network/EntityClient';
-import { useEntities } from './useEntities';
+import { useQueryClient } from '@tanstack/react-query';
+import { EntityUserProvider } from './entityUser';
+import { entityKeys, useEntities } from './useEntities';
+import { invitationKeys } from './useInvitations';
 
 /**
  * Minimal user interface for authentication.
@@ -113,6 +116,56 @@ export interface CurrentEntityProviderProps {
 }
 
 /**
+ * The remembered selection is per user: one account's workspace slug restored
+ * for another would at best be ignored and at worst name a workspace the next
+ * person also belongs to, which is not a choice they made.
+ *
+ * Storage can be missing (React Native has a `window` but no `localStorage`)
+ * or throw (a private window, blocked site data), and neither is a reason to
+ * fail to render, so every access is guarded.
+ */
+function storageKey(uid: string): string {
+  return `${STORAGE_KEY}:${uid}`;
+}
+
+function storage(): Storage | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage;
+  } catch {
+    return null;
+  }
+}
+
+function readStoredSlug(uid: string | null): string | null {
+  if (!uid) return null;
+  try {
+    return storage()?.getItem(storageKey(uid)) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSlug(uid: string | null, slug: string): void {
+  if (!uid) return;
+  try {
+    storage()?.setItem(storageKey(uid), slug);
+  } catch {
+    // Remembering the choice is a convenience; losing it is not an error.
+  }
+}
+
+function removeStoredSlug(uid: string | null): void {
+  try {
+    const store = storage();
+    // The shared key is what versions before per-user storage wrote.
+    store?.removeItem(STORAGE_KEY);
+    if (uid) store?.removeItem(storageKey(uid));
+  } catch {
+    // As above.
+  }
+}
+
+/**
  * Find the personal entity from a list of entities.
  */
 function findPersonalEntity(
@@ -137,50 +190,46 @@ export function CurrentEntityProvider({
   defaultEntitySlug,
   onEntityChange,
 }: CurrentEntityProviderProps) {
-  const [selectedSlug, setSelectedSlug] = useState<string | null>(() => {
-    // Try to restore from storage
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(STORAGE_KEY) || defaultEntitySlug || null;
-    }
-    return defaultEntitySlug || null;
-  });
+  const uid = user?.uid ?? null;
+  const queryClient = useQueryClient();
+  const [selectedSlug, setSelectedSlug] = useState<string | null>(
+    () => readStoredSlug(uid) || defaultEntitySlug || null
+  );
 
   const [isInitialized, setIsInitialized] = useState(false);
-  const previousUserUid = useRef<string | null>(null);
+  const previousUserUid = useRef<string | null>(uid);
 
-  // Only fetch entities when user is authenticated
+  // Only fetch entities when user is authenticated. Named explicitly: this
+  // provider is above the `EntityUserProvider` it renders.
   const {
     data: entities = [],
     isLoading: isEntitiesLoading,
     error,
     refetch,
-  } = useEntities(client, { enabled: !!user });
+  } = useEntities(client, { enabled: !!user, userId: uid });
 
   // Track if we're authenticated
   const isAuthenticated = !!user;
 
-  // Handle user changes (login/logout)
+  // Handle a change of person: sign-in, sign-out, or one account replacing
+  // another in the same tab without a sign-out in between.
   useEffect(() => {
-    const currentUid = user?.uid ?? null;
+    const previousUid = previousUserUid.current;
+    if (uid === previousUid) return;
+    previousUserUid.current = uid;
 
-    // User logged in
-    if (currentUid && currentUid !== previousUserUid.current) {
-      // Refetch entities for the new user
-      refetch();
+    // Every key already starts with the user, so nothing of the previous
+    // person's can be served to the next. Dropping it is memory, and not
+    // leaving one account's data in a tab another is now using.
+    if (previousUid) {
+      queryClient.removeQueries({ queryKey: entityKeys.all(previousUid) });
+      queryClient.removeQueries({ queryKey: invitationKeys.all(previousUid) });
     }
+    if (!uid) removeStoredSlug(previousUid);
 
-    // User logged out
-    if (!currentUid && previousUserUid.current) {
-      // Clear the selected entity
-      setSelectedSlug(null);
-      setIsInitialized(false);
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-
-    previousUserUid.current = currentUid;
-  }, [user?.uid, refetch]);
+    setSelectedSlug(readStoredSlug(uid) || defaultEntitySlug || null);
+    setIsInitialized(false);
+  }, [uid, queryClient, defaultEntitySlug]);
 
   // Determine current entity based on selection priority:
   // 1. Selected slug (if still valid in entities list)
@@ -210,15 +259,13 @@ export function CurrentEntityProvider({
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    if (currentEntity && typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, currentEntity.entitySlug);
-    }
+    if (currentEntity) writeStoredSlug(uid, currentEntity.entitySlug);
 
     // Mark as initialized once we have entities (even if empty) and not loading
     if (!isEntitiesLoading && isAuthenticated) {
       setIsInitialized(true);
     }
-  }, [currentEntity, isEntitiesLoading, isAuthenticated]);
+  }, [currentEntity, isEntitiesLoading, isAuthenticated, uid]);
 
   // Auto-select personal entity when entities are first loaded
   useEffect(() => {
@@ -263,10 +310,8 @@ export function CurrentEntityProvider({
   const clear = useCallback(() => {
     setSelectedSlug(null);
     setIsInitialized(false);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, []);
+    removeStoredSlug(uid);
+  }, [uid]);
 
   // Compute loading state
   const isLoading = isAuthenticated && isEntitiesLoading;
@@ -286,9 +331,11 @@ export function CurrentEntityProvider({
   };
 
   return (
-    <CurrentEntityContext.Provider value={value}>
-      {children}
-    </CurrentEntityContext.Provider>
+    <EntityUserProvider userId={uid}>
+      <CurrentEntityContext.Provider value={value}>
+        {children}
+      </CurrentEntityContext.Provider>
+    </EntityUserProvider>
   );
 }
 

@@ -4,6 +4,7 @@
  */
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEntityUserId } from './entityUser';
 import { EntityClient } from '../network/EntityClient';
 import { entityKeys } from './useEntities';
 import type {
@@ -15,10 +16,10 @@ import type {
  * Query keys for API key queries.
  */
 export const apiKeyKeys = {
-  all: (entitySlug: string) =>
-    [...entityKeys.detail(entitySlug), 'api-keys'] as const,
-  list: (entitySlug: string) =>
-    [...apiKeyKeys.all(entitySlug), 'list'] as const,
+  all: (userId: string | null, entitySlug: string) =>
+    [...entityKeys.detail(userId, entitySlug), 'api-keys'] as const,
+  list: (userId: string | null, entitySlug: string) =>
+    [...apiKeyKeys.all(userId, entitySlug), 'list'] as const,
 };
 
 /**
@@ -29,8 +30,9 @@ export function useEntityApiKeys(
   client: EntityClient,
   entitySlug: string | null
 ) {
+  const userId = useEntityUserId();
   return useQuery({
-    queryKey: entitySlug ? apiKeyKeys.list(entitySlug) : ['disabled'],
+    queryKey: entitySlug ? apiKeyKeys.list(userId, entitySlug) : ['disabled'],
     queryFn: async () => {
       if (!entitySlug) return [];
       const response = await client.listApiKeys(entitySlug);
@@ -49,6 +51,7 @@ export function useEntityApiKeys(
  * it cannot be retrieved again.
  */
 export function useCreateApiKey(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -67,7 +70,7 @@ export function useCreateApiKey(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: apiKeyKeys.list(variables.entitySlug),
+        queryKey: apiKeyKeys.list(userId, variables.entitySlug),
       });
     },
   });
@@ -77,6 +80,7 @@ export function useCreateApiKey(client: EntityClient) {
  * Hook to rename an API key or toggle whether it is active.
  */
 export function useUpdateApiKey(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -97,7 +101,7 @@ export function useUpdateApiKey(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: apiKeyKeys.list(variables.entitySlug),
+        queryKey: apiKeyKeys.list(userId, variables.entitySlug),
       });
     },
   });
@@ -107,6 +111,7 @@ export function useUpdateApiKey(client: EntityClient) {
  * Hook to permanently revoke an API key.
  */
 export function useRevokeApiKey(client: EntityClient) {
+  const userId = useEntityUserId();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -124,7 +129,7 @@ export function useRevokeApiKey(client: EntityClient) {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
-        queryKey: apiKeyKeys.list(variables.entitySlug),
+        queryKey: apiKeyKeys.list(userId, variables.entitySlug),
       });
     },
   });

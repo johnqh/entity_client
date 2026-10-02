@@ -61,6 +61,8 @@ export {
   useCurrentEntity,
   useCurrentEntityOptional,
   CurrentEntityProvider,
+  EntityUserProvider,
+  useEntityUserId,
   type CurrentEntityContextValue,
   type CurrentEntityProviderProps,
   type AuthUser,
